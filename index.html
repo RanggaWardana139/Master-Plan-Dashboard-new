@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Master Plan Dashboard</title>
+<style>
+  :root{
+    --blue:#4472C4; --blue-dk:#2F5597; --navy:#1F3864;
+    --orange:#ED7D31; --yellow:#FFC000; --grey:#A5A5A5;
+    --ltblue:#5B9BD5; --green:#70AD47; --red:#C00000;
+    --ink:#20304a; --muted:#6b7a90; --line:#d4dced; --panel:#ffffff; --bg:#eef2f9;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:18px; background:var(--bg); color:var(--ink);
+    font-family:"Segoe UI",Calibri,system-ui,sans-serif; font-size:14px;
+  }
+  .wrap{max-width:1400px;margin:0 auto}
+
+  .topbar{
+    display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;
+    background:var(--navy);color:#fff;border-radius:6px;padding:10px 16px;margin-bottom:16px;
+  }
+  .topbar h1{margin:0;font-size:19px;letter-spacing:.06em;font-weight:700}
+  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .controls label{font-size:12px;opacity:.85}
+  select,button{
+    font:inherit;font-size:13px;padding:4px 9px;border-radius:4px;
+    border:1px solid #4a5f8a;background:#fff;color:var(--ink);cursor:pointer;
+  }
+  button:hover{background:#e8eefc}
+  .stamp{font-size:12px;opacity:.8}
+
+  .band{
+    background:var(--navy);color:#fff;text-align:center;font-weight:700;
+    letter-spacing:.12em;padding:7px;border-radius:5px;margin:22px 0 14px;font-size:15px;
+  }
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px 18px}
+  .card > h2{
+    margin:-4px -6px 12px;background:var(--blue);color:#fff;text-align:center;
+    font-size:15px;font-weight:700;padding:8px;border-radius:5px;
+  }
+  .sub{text-align:center;color:var(--muted);font-size:13px;margin:-6px 0 10px}
+  .sub b{color:var(--ink)}
+
+  .legend{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;margin:0 0 10px;font-size:12px}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .legend i{width:11px;height:11px;border-radius:2px;display:inline-block}
+
+  svg{display:block;width:100%;height:auto;overflow:visible}
+  .ax{stroke:var(--line);stroke-width:1}
+  .gl{stroke:#eaeff8;stroke-width:1}
+  .tk{font-size:11px;fill:var(--muted)}
+  .vl{font-size:11px;font-weight:700;fill:#fff}
+  .vd{font-size:11px;font-weight:700;fill:var(--ink)}
+  .axt{font-size:11px;fill:var(--muted)}
+
+  table{border-collapse:collapse;width:100%;font-size:11.5px;margin-top:8px}
+  th,td{border:1px solid var(--line);padding:3px 6px;text-align:right;white-space:nowrap}
+  th:first-child,td:first-child{text-align:left;font-weight:600}
+  thead th{background:#f2f6fd;font-weight:700}
+  tbody tr:nth-child(even){background:#fafcff}
+  .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+
+  #status{padding:26px;text-align:center;color:var(--muted)}
+  .err{background:#fff2f2;border:1px solid #f0c0c0;color:#8a2020;padding:14px 16px;border-radius:6px}
+  .warn{background:#fff8e6;border:1px solid #f0dca8;color:#6b5518;padding:9px 13px;border-radius:6px;font-size:12.5px;margin-bottom:14px}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <h1>MASTER PLAN DASHBOARD</h1>
+    <div class="controls">
+      <label for="yr">Ship year</label>
+      <select id="yr"></select>
+      <label for="wk">Weeks shown</label>
+      <select id="wk">
+        <option value="8">8</option>
+        <option value="10" selected>10</option>
+        <option value="12">12</option>
+        <option value="16">16</option>
+      </select>
+      <button id="reload" type="button">Refresh data</button>
+    </div>
+    <div class="stamp" id="stamp"></div>
+  </div>
+
+  <div id="status">Loading data…</div>
+
+  <div id="dash" class="hide">
+    <div id="warnings"></div>
+
+    <div class="grid">
+      <div class="card">
+        <h2 id="t-pie">Sales Status</h2>
+        <div class="sub" id="pie-sub"></div>
+        <div id="pie"></div>
+      </div>
+      <div class="card">
+        <h2>Status Order</h2>
+        <div class="sub" id="month-sub"></div>
+        <div id="month"></div>
+        <div id="month-table"></div>
+      </div>
+    </div>
+
+    <div class="band">PRODUCT SHIPMENT</div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Shipment Plan This Week Onward</h2>
+        <div id="plan"></div>
+      </div>
+      <div class="card">
+        <h2>Booking Status This Week Onward</h2>
+        <div id="booking"></div>
+      </div>
+      <div class="card">
+        <h2>Main Product Status</h2>
+        <div id="briq"></div>
+      </div>
+      <div class="card">
+        <h2>Packaging Material Status</h2>
+        <div id="pack"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ------------------------------------------------------------------ *
+ *  CONFIG — edit here
+ * ------------------------------------------------------------------ */
+const CONFIG = {
+  CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTSFb8mibeLxtTRWAllYDxiUr6RT0ezSeMRxvEObufk-EIKTQjibnLq9R3d4hbQcDbIf9fvkbmm-TDK/pub?gid=383332130&single=true&output=csv",
+  SALES_TARGET_MT: 13508,   // manual figure shown in the pie subtitle
+  WEEKS_AHEAD: 10,          // default; also switchable in the header
+  WEEKS_BACK: 0             // set to 1 to include last week as well
+};
+
+/* Canonical order + colours for Order status. Anything not listed here is
+   kept, drawn last in grey, and reported in the warning strip.            */
+const STATUS = [
+  ["Send to harbor",    "#4472C4"],
+  ["Finish Pack",       "#ED7D31"],
+  ["Packing",           "#FFC000"],
+  ["On Hand",           "#A5A5A5"],
+  ["Waiting DP",        "#5B9BD5"],
+  ["Customer Forecast", "#70AD47"]
+];
+const STATUS_ALIAS = {
+  "send to harbor":"Send to harbor", "send to habor":"Send to harbor",
+  "finish pack":"Finish Pack", "finish packing":"Finish Pack",
+  "packing":"Packing",
+  "on hand":"On Hand", "onhand":"On Hand",
+  "waiting dp":"Waiting DP", "waiting d/p":"Waiting DP",
+  "customer forecast":"Customer Forecast", "forecast":"Customer Forecast"
+};
+const C_READY="#70AD47", C_NOT="#4472C4", C_CONF="#70AD47", C_MISS="#4472C4";
+
+/* ------------------------------------------------------------------ *
+ *  CSV parsing
+ * ------------------------------------------------------------------ */
+function parseCSV(text){
+  const rows=[]; let row=[], cell="", q=false;
+  text = text.replace(/\r\n/g,"\n").replace(/\r/g,"\n");
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){
+      if(c==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else q=false; }
+      else cell+=c;
+    }else{
+      if(c==='"') q=true;
+      else if(c===","){ row.push(cell); cell=""; }
+      else if(c==="\n"){ row.push(cell); rows.push(row); row=[]; cell=""; }
+      else cell+=c;
+    }
+  }
+  if(cell!==""||row.length){ row.push(cell); rows.push(row); }
+  return rows;
+}
+const norm = s => String(s==null?"":s).replace(/\s+/g," ").trim().toLowerCase();
+
+/* ------------------------------------------------------------------ *
+ *  Numbers / weeks
+ * ------------------------------------------------------------------ */
+// Sheet uses comma as the decimal separator ("2,5") and no thousand separators.
+function num(v){
+  if(v==null) return NaN;
+  const s=String(v).trim().replace(/\s/g,"").replace(",",".");
+  if(s===""||s==="#N/A"||s==="-") return NaN;
+  const n=Number(s);
+  return isFinite(n)?n:NaN;
+}
+function isoWeeksInYear(y){
+  const jan1=new Date(Date.UTC(y,0,1)).getUTCDay();      // 0=Sun
+  const leap=(y%4===0&&y%100!==0)||y%400===0;
+  return (jan1===4||(leap&&jan1===3))?53:52;             // Thu, or Wed in a leap year
+}
+// "2447" -> {y:2024,w:47}. Rejects 0, blanks, junk.
+function parseWeek(v){
+  const n=num(v);
+  if(!isFinite(n)||n<=0) return null;
+  const s=String(Math.trunc(n));
+  if(s.length<3||s.length>4) return null;
+  const w=Number(s.slice(-2)), yy=Number(s.slice(0,-2));
+  if(!(w>=1&&w<=53)) return null;
+  return {y:2000+yy, w:w};
+}
+const wkKey = k => String(k.y%100).padStart(2,"0")+String(k.w).padStart(2,"0");
+function addWeeks(k,n){
+  let y=k.y,w=k.w;
+  while(n>0){ const max=isoWeeksInYear(y); w++; if(w>max){w=1;y++;} n--; }
+  while(n<0){ w--; if(w<1){y--;w=isoWeeksInYear(y);} n++; }
+  return {y,w};
+}
+function currentWeek(d=new Date()){
+  const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  const day=t.getUTCDay()||7;                 // Mon=1..Sun=7
+  t.setUTCDate(t.getUTCDate()+4-day);         // Thursday of this ISO week
+  const y=t.getUTCFullYear();
+  const jan1=new Date(Date.UTC(y,0,1));
+  const w=Math.ceil(((t-jan1)/86400000+1)/7);
+  return {y,w};
+}
+
+/* ------------------------------------------------------------------ *
+ *  Load + shape
+ * ------------------------------------------------------------------ */
+let ROWS=[], WARN=[];
+
+function buildRows(text){
+  const raw=parseCSV(text);
+  const hIdx=raw.findIndex(r=>r.some(c=>norm(c)==="country"));
+  if(hIdx<0) throw new Error("Header row not found — expected a column named 'Country'.");
+  const head=raw[hIdx].map(norm);
+  const col=name=>{
+    const i=head.indexOf(norm(name));
+    if(i<0) throw new Error("Missing column: "+name);
+    return i;
+  };
+  const iSO=col("SO Number"), iSt=col("Order status"), iFull=col("Full"),
+        iKg=col("Kg/Contaienr"),               // sheet's own spelling
+        iEsw=col("Estimated Shipping Week"),
+        iBk=col("Confirmed Booked Container"),
+        iMon=col("Estimation Loading (Month)"),
+        iShip=col("Ship"),
+        iBriq=head.findIndex(h=>h.startsWith("status briquettes")),
+        iPack=head.findIndex(h=>h.startsWith("status packing material"));
+  if(iBriq<0) throw new Error("Missing column: Status Briquettes");
+  if(iPack<0) throw new Error("Missing column: Status packing material");
+
+  const unknown=new Set();
+  const out=[];
+  for(let r=hIdx+1;r<raw.length;r++){
+    const c=raw[r];
+    if(!c || c.length<5) continue;
+    if(!/^CG-SO/i.test(String(c[iSO]||"").trim())) continue;   // row filter
+    const st=norm(c[iSt]);
+    if(st==="cancelled"||st==="cancel") continue;              // cancelled excluded
+    if(st==="") continue;
+    let label=STATUS_ALIAS[st];
+    if(!label){ label=String(c[iSt]).trim(); unknown.add(label); }
+    const full=num(c[iFull]);
+    out.push({
+      status:label,
+      full: isFinite(full)?full:0,
+      mt: (isFinite(num(c[iKg]))?num(c[iKg]):0)/1000,
+      esw: parseWeek(c[iEsw]),
+      booked: parseWeek(c[iBk])!==null,
+      month: (()=>{const m=num(c[iMon]);return (m>=1&&m<=12)?Math.trunc(m):null;})(),
+      ship: (()=>{const y=num(c[iShip]);return isFinite(y)?Math.trunc(y):null;})(),
+      briqReady: isReady(c[iBriq]),
+      packReady: isReady(c[iPack])
+    });
+  }
+  WARN=[];
+  if(unknown.size) WARN.push("Order status not in the known list, shown in grey: "+[...unknown].join(", "));
+  const noWeek=out.filter(r=>!r.esw).length;
+  if(noWeek) WARN.push(noWeek>1
+    ? noWeek+" rows have no usable Estimated Shipping Week, so they sit outside the four weekly charts."
+    : "1 row has no usable Estimated Shipping Week, so it sits outside the four weekly charts.");
+  return out;
+}
+// RIGHT(5)="Ready", trimmed and case-insensitive.
+function isReady(v){
+  const s=String(v==null?"":v).trim();
+  return s.slice(-5).toLowerCase()==="ready";
+}
+function statusList(rows){
+  const known=STATUS.map(s=>s[0]);
+  const extra=[...new Set(rows.map(r=>r.status))].filter(s=>!known.includes(s));
+  return known.concat(extra);
+}
+const colourOf=(()=>{const m=new Map(STATUS);return s=>m.get(s)||"#9aa7bd";})();
+
+/* ------------------------------------------------------------------ *
+ *  SVG helpers
+ * ------------------------------------------------------------------ */
+const NS="http://www.w3.org/2000/svg";
+function el(tag,attrs,text){
+  const n=document.createElementNS(NS,tag);
+  for(const k in attrs) n.setAttribute(k,attrs[k]);
+  if(text!=null) n.textContent=text;
+  return n;
+}
+function svgRoot(host,w,h){
+  host.innerHTML="";
+  const s=el("svg",{viewBox:`0 0 ${w} ${h}`,role:"img"});
+  host.appendChild(s); return s;
+}
+function legend(host,items){
+  const d=document.createElement("div"); d.className="legend";
+  items.forEach(([label,colour])=>{
+    const s=document.createElement("span");
+    s.innerHTML=`<i style="background:${colour}"></i>${label}`;
+    d.appendChild(s);
+  });
+  host.appendChild(d);
+}
+const fmt=(n,d=0)=>n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+// Keep numbers legible on light fills such as the yellow and grey segments.
+function textOn(hex){
+  const c=hex.replace("#",""), n=parseInt(c.length===3?c.replace(/./g,m=>m+m):c,16);
+  const L=(0.299*(n>>16&255)+0.587*(n>>8&255)+0.114*(n&255))/255;
+  return L>0.62?"#20304a":"#ffffff";
+}
+function tip(node,text){ node.appendChild(el("title",{},text)); }
+
+/* ------------------------------------------------------------------ *
+ *  Chart: stacked bars (absolute or 100%)
+ * ------------------------------------------------------------------ */
+// Round the axis up to a readable step; container counts stay on whole numbers.
+function niceAxis(max,integer){
+  if(!(max>0)) return {max:integer?1:1,n:1};
+  const raw=max/5, mag=Math.pow(10,Math.floor(Math.log10(raw)));
+  let step=[1,2,2.5,5,10].map(m=>m*mag).find(s=>s>=raw)||raw;
+  if(integer) step=Math.max(1,Math.round(step));
+  const top=Math.ceil(max/step)*step;
+  return {max:top,n:Math.max(1,Math.round(top/step))};
+}
+function stackedBars(host,{cats,series,pct=false,yTitle="Container",xTitle="Week",unit="",dec=0,showValues=true}){
+  const W=640,H=330,L=52,R=14,T=14,B=46;
+  const pw=W-L-R, ph=H-T-B;
+  host.innerHTML="";
+  legend(host,series.map(s=>[s.name,s.colour]));
+  const svg=svgRoot(document.createElement("div"),W,H);
+  host.appendChild(svg.parentNode);
+
+  const totals=cats.map((_,i)=>series.reduce((a,s)=>a+(s.data[i]||0),0));
+  const axis = pct ? {max:100,n:5} : niceAxis(Math.max(...totals,0),dec===0);
+  const yMax=axis.max, ticks=axis.n;
+  for(let t=0;t<=ticks;t++){
+    const v=yMax*t/ticks, y=T+ph-ph*t/ticks;
+    svg.appendChild(el("line",{x1:L,x2:L+pw,y1:y,y2:y,class:t?"gl":"ax"}));
+    svg.appendChild(el("text",{x:L-7,y:y+4,"text-anchor":"end",class:"tk"}, pct?v+"%":fmt(v,dec)));
+  }
+  svg.appendChild(el("line",{x1:L,x2:L,y1:T,y2:T+ph,class:"ax"}));
+
+  const bw=Math.min(46,pw/cats.length*0.62), gap=pw/cats.length;
+  cats.forEach((cat,i)=>{
+    const cx=L+gap*i+gap/2, x=cx-bw/2;
+    const tot=totals[i];
+    let acc=0;
+    series.forEach(s=>{
+      const raw=s.data[i]||0; if(!raw) return;
+      const v=pct?(tot?raw/tot*100:0):raw;
+      const h=ph*v/yMax, y=T+ph-ph*(acc+v)/yMax;
+      const rect=el("rect",{x,y,width:bw,height:h,fill:s.colour});
+      tip(rect,`${cat} · ${s.name}: ${fmt(raw,dec)}${unit}${pct?` (${fmt(v,0)}%)`:""}`);
+      svg.appendChild(rect);
+      if(showValues&&h>13&&bw>20)
+        svg.appendChild(el("text",{x:cx,y:y+h/2+4,"text-anchor":"middle",class:"vl",
+          fill:textOn(s.colour)},fmt(raw,dec)));
+      acc+=v;
+    });
+    if(!pct&&tot)
+      svg.appendChild(el("text",{x:cx,y:T+ph-ph*tot/yMax-5,"text-anchor":"middle",class:"vd"},fmt(tot,dec)));
+    svg.appendChild(el("text",{x:cx,y:T+ph+16,"text-anchor":"middle",class:"tk"},cat));
+  });
+  svg.appendChild(el("line",{x1:L,x2:L+pw,y1:T+ph,y2:T+ph,class:"ax"}));
+  svg.appendChild(el("text",{x:L+pw/2,y:H-6,"text-anchor":"middle",class:"axt"},xTitle));
+  svg.appendChild(el("text",{x:14,y:T+ph/2,"text-anchor":"middle",class:"axt",
+    transform:`rotate(-90 14 ${T+ph/2})`},yTitle));
+}
+
+/* ------------------------------------------------------------------ *
+ *  Chart: donut
+ * ------------------------------------------------------------------ */
+function donut(host,slices,centreTop,centreBottom){
+  const W=560,H=300,cx=175,cy=150,rO=115,rI=64;
+  host.innerHTML="";
+  const svg=svgRoot(document.createElement("div"),W,H);
+  host.appendChild(svg.parentNode);
+  const total=slices.reduce((a,s)=>a+s.value,0);
+  let ang=-Math.PI/2;
+  slices.forEach(s=>{
+    if(s.value<=0) return;
+    const sweep=total?s.value/total*Math.PI*2:0, end=ang+sweep;
+    const big=sweep>Math.PI?1:0;
+    const P=(r,a)=>[cx+r*Math.cos(a),cy+r*Math.sin(a)];
+    const [x1,y1]=P(rO,ang),[x2,y2]=P(rO,end),[x3,y3]=P(rI,end),[x4,y4]=P(rI,ang);
+    const path=el("path",{fill:s.colour,stroke:"#fff","stroke-width":1.5,
+      d:`M${x1} ${y1}A${rO} ${rO} 0 ${big} 1 ${x2} ${y2}L${x3} ${y3}A${rI} ${rI} 0 ${big} 0 ${x4} ${y4}Z`});
+    tip(path,`${s.name}: ${fmt(s.value)} MT (${fmt(s.value/total*100,1)}%)`);
+    svg.appendChild(path);
+    if(sweep>0.35){
+      const [lx,ly]=P((rO+rI)/2,ang+sweep/2);
+      svg.appendChild(el("text",{x:lx,y:ly+4,"text-anchor":"middle",class:"vl",
+        fill:textOn(s.colour)},fmt(s.value)));
+    }
+    ang=end;
+  });
+  svg.appendChild(el("text",{x:cx,y:cy-4,"text-anchor":"middle",
+    style:"font-size:23px;font-weight:700;fill:#20304a"},centreTop));
+  svg.appendChild(el("text",{x:cx,y:cy+17,"text-anchor":"middle",
+    style:"font-size:12px;fill:#6b7a90"},centreBottom));
+
+  let ly=42;
+  slices.forEach(s=>{
+    svg.appendChild(el("rect",{x:322,y:ly-10,width:12,height:12,rx:2,fill:s.colour}));
+    svg.appendChild(el("text",{x:342,y:ly,style:"font-size:12.5px;fill:#20304a"},s.name));
+    svg.appendChild(el("text",{x:W-10,y:ly,"text-anchor":"end",
+      style:"font-size:12.5px;font-weight:700;fill:#20304a"},fmt(s.value)+" MT"));
+    ly+=27;
+  });
+}
+
+/* ------------------------------------------------------------------ *
+ *  Render
+ * ------------------------------------------------------------------ */
+function render(){
+  const year=document.getElementById("yr").value;
+  const nWeeks=Number(document.getElementById("wk").value)||CONFIG.WEEKS_AHEAD;
+  const yearRows = year==="all" ? ROWS : ROWS.filter(r=>String(r.ship)===year);
+  const label = year==="all" ? "All years" : year;
+
+  const w=document.getElementById("warnings");
+  w.innerHTML = WARN.length ? `<div class="warn">${WARN.join("<br>")}</div>` : "";
+
+  const statuses=statusList(ROWS);
+
+  /* 1 — Sales status, MT */
+  const pieSlices=statuses.map(s=>({
+    name:s, colour:colourOf(s),
+    value:yearRows.filter(r=>r.status===s).reduce((a,r)=>a+r.mt,0)
+  })).filter(s=>s.value>0);
+  const totalMT=pieSlices.reduce((a,s)=>a+s.value,0);
+  document.getElementById("t-pie").textContent=`Sales Status ${label}`;
+  document.getElementById("pie-sub").innerHTML=
+    `Target <b>${fmt(CONFIG.SALES_TARGET_MT)} MT</b> · plan on the sheet <b>${fmt(totalMT)} MT</b>`;
+  donut(document.getElementById("pie"),pieSlices,fmt(totalMT),"MT on plan");
+
+  /* 2 — Status order by month, 100% stacked + table */
+  const months=[...Array(12)].map((_,i)=>i+1);
+  const mSeries=statuses.map(s=>({
+    name:s, colour:colourOf(s),
+    data:months.map(m=>yearRows.filter(r=>r.status===s&&r.month===m).reduce((a,r)=>a+r.mt,0))
+  })).filter(s=>s.data.some(v=>v>0));
+  document.getElementById("month-sub").textContent=`${label} status order by loading month, in MT`;
+  stackedBars(document.getElementById("month"),{
+    cats:months.map(String), series:mSeries, pct:true, showValues:false,
+    yTitle:"Share", xTitle:"Loading month", unit:" MT"
+  });
+  let html='<table><thead><tr><th>Status</th>'+months.map(m=>`<th>${m}</th>`).join("")+'<th>Total</th></tr></thead><tbody>';
+  mSeries.forEach(s=>{
+    const tot=s.data.reduce((a,b)=>a+b,0);
+    html+=`<tr><td><span class="sw" style="background:${s.colour}"></span>${s.name}</td>`
+        + s.data.map(v=>`<td>${v?fmt(v):"·"}</td>`).join("")
+        + `<td>${fmt(tot)}</td></tr>`;
+  });
+  html+="</tbody></table>";
+  document.getElementById("month-table").innerHTML=html;
+
+  /* 3–6 — weekly, by container count (sum of Full) */
+  const start=addWeeks(currentWeek(),-CONFIG.WEEKS_BACK);
+  const weeks=[...Array(nWeeks)].map((_,i)=>addWeeks(start,i));
+  const keys=weeks.map(wkKey);
+  const inWeek=keys.map(k=>ROWS.filter(r=>r.esw&&wkKey(r.esw)===k));
+  const sum=(rows,f)=>rows.filter(f).reduce((a,r)=>a+r.full,0);
+
+  stackedBars(document.getElementById("plan"),{
+    cats:keys,
+    series:statuses.map(s=>({name:s,colour:colourOf(s),
+      data:inWeek.map(rs=>sum(rs,r=>r.status===s))})).filter(s=>s.data.some(v=>v>0))
+  });
+  stackedBars(document.getElementById("booking"),{
+    cats:keys,
+    series:[
+      {name:"Confirmed",colour:C_CONF,data:inWeek.map(rs=>sum(rs,r=>r.booked))},
+      {name:"Missing",  colour:C_MISS,data:inWeek.map(rs=>sum(rs,r=>!r.booked))}
+    ]
+  });
+  stackedBars(document.getElementById("briq"),{
+    cats:keys,
+    series:[
+      {name:"Ready",    colour:C_READY,data:inWeek.map(rs=>sum(rs,r=>r.briqReady))},
+      {name:"Not Ready",colour:C_NOT,  data:inWeek.map(rs=>sum(rs,r=>!r.briqReady))}
+    ]
+  });
+  stackedBars(document.getElementById("pack"),{
+    cats:keys,
+    series:[
+      {name:"Ready",    colour:C_READY,data:inWeek.map(rs=>sum(rs,r=>r.packReady))},
+      {name:"Not Ready",colour:C_NOT,  data:inWeek.map(rs=>sum(rs,r=>!r.packReady))}
+    ]
+  });
+}
+
+/* ------------------------------------------------------------------ *
+ *  Boot
+ * ------------------------------------------------------------------ */
+async function load(){
+  const st=document.getElementById("status");
+  document.getElementById("dash").classList.add("hide");
+  st.classList.remove("hide"); st.className=""; st.textContent="Loading data…";
+  try{
+    const res=await fetch(CONFIG.CSV_URL+"&_="+Date.now());
+    if(!res.ok) throw new Error("The sheet returned HTTP "+res.status+".");
+    const text=await res.text();
+    if(/^\s*</.test(text)) throw new Error("The sheet returned a web page instead of CSV. Re-publish it to the web as CSV.");
+    ROWS=buildRows(text);
+    if(!ROWS.length) throw new Error("No rows matched the CG-SO filter.");
+
+    const years=[...new Set(ROWS.map(r=>r.ship).filter(Boolean))].sort();
+    const count={}; ROWS.forEach(r=>{if(r.ship)count[r.ship]=(count[r.ship]||0)+1;});
+    const common=years.slice().sort((a,b)=>count[b]-count[a])[0];
+    const sel=document.getElementById("yr");
+    sel.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join("")
+                 +'<option value="all">All years</option>';
+    sel.value=String(common);
+
+    const now=new Date(), cw=currentWeek();
+    document.getElementById("stamp").textContent=
+      `Week ${wkKey(cw)} · refreshed ${now.toLocaleString("en-GB",{hour12:false})} · ${fmt(ROWS.length)} rows`;
+
+    st.classList.add("hide");
+    document.getElementById("dash").classList.remove("hide");
+    render();
+  }catch(e){
+    st.className="err";
+    st.innerHTML=`<b>Could not load the data.</b><br>${e.message}`
+      +`<br><br>Check that the sheet is still published to the web, then use Refresh data.`;
+  }
+}
+document.getElementById("reload").addEventListener("click",load);
+document.getElementById("yr").addEventListener("change",render);
+document.getElementById("wk").addEventListener("change",render);
+load();
+</script>
+</body>
+</html>
