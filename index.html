@@ -3,150 +3,202 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Master Plan Dashboard</title>
+<title>Master Plan · Shipment Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --blue:#4472C4; --blue-dk:#2F5597; --navy:#1F3864;
-    --orange:#ED7D31; --yellow:#FFC000; --grey:#A5A5A5;
-    --ltblue:#5B9BD5; --green:#70AD47; --red:#C00000;
-    --ink:#20304a; --muted:#6b7a90; --line:#d4dced; --panel:#ffffff; --bg:#eef2f9;
+    /* shell */
+    --ink:#0B2233; --ink-2:#143650; --paper:#F4F7FA; --card:#fff;
+    --rule:#DCE3EB; --rule-soft:#EDF1F6; --muted:#64798C; --text:#16304A;
+    --ember:#DB5C1E;
+    /* status — unchanged from the Excel report so the colours stay learnable */
+    --c-harbor:#4472C4; --c-finish:#ED7D31; --c-packing:#FFC000;
+    --c-onhand:#A5A5A5; --c-dp:#5B9BD5; --c-forecast:#70AD47;
   }
   *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
   body{
-    margin:0; padding:18px; background:var(--bg); color:var(--ink);
-    font-family:"Segoe UI",Calibri,system-ui,sans-serif; font-size:14px;
+    margin:0; background:var(--paper); color:var(--text);
+    font-family:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+    font-size:14px; line-height:1.45; font-variant-numeric:tabular-nums;
   }
-  .wrap{max-width:1400px;margin:0 auto}
+  .wrap{max-width:1360px;margin:0 auto;padding:0 20px 56px}
 
-  .topbar{
-    display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;
-    background:var(--navy);color:#fff;border-radius:6px;padding:10px 16px;margin-bottom:16px;
+  /* ---------- masthead ---------- */
+  .mast{background:var(--ink);color:#fff}
+  .mast-in{
+    max-width:1360px;margin:0 auto;padding:16px 20px;
+    display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;
   }
-  .topbar h1{margin:0;font-size:19px;letter-spacing:.06em;font-weight:700}
-  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  .controls label{font-size:12px;opacity:.85}
+  .mast h1{margin:0;font-size:20px;font-weight:600;letter-spacing:-.01em}
+  .mast p{margin:2px 0 0;font-size:13px;color:#9DB4C7}
+  .ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .field{display:flex;align-items:center;gap:7px;font-size:12.5px;color:#9DB4C7}
   select,button{
-    font:inherit;font-size:13px;padding:4px 9px;border-radius:4px;
-    border:1px solid #4a5f8a;background:#fff;color:var(--ink);cursor:pointer;
+    font:inherit;font-size:13px;padding:6px 10px;border-radius:7px;
+    border:1px solid #2C516E;background:transparent;color:#fff;cursor:pointer;
   }
-  button:hover{background:#e8eefc}
-  .stamp{font-size:12px;opacity:.8}
+  select{background:#143650}
+  select:hover,button:hover{border-color:#4E7A9C}
+  button{background:var(--ember);border-color:var(--ember);font-weight:500}
+  button:hover{background:#c24f13;border-color:#c24f13}
+  :focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
-  .band{
-    background:var(--navy);color:#fff;text-align:center;font-weight:700;
-    letter-spacing:.12em;padding:7px;border-radius:5px;margin:22px 0 14px;font-size:15px;
+  /* ---------- readout rail ---------- */
+  .rail{
+    background:var(--card);border:1px solid var(--rule);border-radius:12px;
+    margin:20px 0 6px;display:grid;grid-template-columns:repeat(5,1fr);overflow:hidden;
   }
-  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-  @media(max-width:980px){.grid{grid-template-columns:1fr}}
-
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px 18px}
-  .card > h2{
-    margin:-4px -6px 12px;background:var(--blue);color:#fff;text-align:center;
-    font-size:15px;font-weight:700;padding:8px;border-radius:5px;
+  .rail div{padding:14px 18px;border-left:1px solid var(--rule-soft)}
+  .rail div:first-child{border-left:0}
+  .rail dt{margin:0;font-size:12px;color:var(--muted);font-weight:400}
+  .rail dd{margin:3px 0 0;font-size:25px;font-weight:600;letter-spacing:-.02em;line-height:1.1}
+  .rail dd small{font-size:13px;font-weight:400;color:var(--muted);margin-left:3px}
+  .note{font-size:12px;color:var(--muted);margin-top:3px}
+  .note.low{color:var(--ember)}
+  @media(max-width:1000px){
+    .rail{grid-template-columns:repeat(2,1fr)}
+    .rail div{border-top:1px solid var(--rule-soft)}
+    .rail div:nth-child(-n+2){border-top:0}
+    .rail div:nth-child(odd){border-left:0}
   }
-  .sub{text-align:center;color:var(--muted);font-size:13px;margin:-6px 0 10px}
-  .sub b{color:var(--ink)}
 
-  .legend{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;margin:0 0 10px;font-size:12px}
-  .legend span{display:inline-flex;align-items:center;gap:5px}
-  .legend i{width:11px;height:11px;border-radius:2px;display:inline-block}
+  /* ---------- sections ---------- */
+  .sec{display:flex;align-items:baseline;gap:14px;margin:34px 0 14px}
+  .sec h2{margin:0;font-size:16px;font-weight:600;letter-spacing:-.01em;white-space:nowrap}
+  .sec span{font-size:12.5px;color:var(--muted);white-space:nowrap}
+  .sec i{flex:1;height:1px;background:var(--rule);display:block}
+
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+  @media(max-width:1000px){.grid{grid-template-columns:1fr}}
+
+  .panel{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:18px 20px 20px}
+  .panel h3{margin:0;font-size:15px;font-weight:600}
+  .panel .cap{margin:2px 0 14px;font-size:12.5px;color:var(--muted)}
+  .panel .cap b{color:var(--text);font-weight:600}
+
+  .key{display:flex;flex-wrap:wrap;gap:5px 16px;margin:0 0 12px;font-size:12.5px;color:var(--muted)}
+  .key span{display:inline-flex;align-items:center;gap:6px}
+  .key i{width:10px;height:10px;border-radius:3px;display:inline-block}
 
   svg{display:block;width:100%;height:auto;overflow:visible}
-  .ax{stroke:var(--line);stroke-width:1}
-  .gl{stroke:#eaeff8;stroke-width:1}
-  .tk{font-size:11px;fill:var(--muted)}
-  .vl{font-size:11px;font-weight:700;fill:#fff}
-  .vd{font-size:11px;font-weight:700;fill:var(--ink)}
-  .axt{font-size:11px;fill:var(--muted)}
+  .tk{font-size:11.5px;fill:var(--muted)}
+  .tk.now{fill:var(--ember);font-weight:600}
+  .vl{font-size:11.5px;font-weight:600}
+  .vd{font-size:11.5px;font-weight:600;fill:var(--text)}
+  .axt{font-size:11.5px;fill:var(--muted)}
+  .ax{stroke:var(--rule)}
+  .gl{stroke:var(--rule-soft)}
 
-  table{border-collapse:collapse;width:100%;font-size:11.5px;margin-top:8px}
-  th,td{border:1px solid var(--line);padding:3px 6px;text-align:right;white-space:nowrap}
-  th:first-child,td:first-child{text-align:left;font-weight:600}
-  thead th{background:#f2f6fd;font-weight:700}
-  tbody tr:nth-child(even){background:#fafcff}
-  .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+  table{border-collapse:collapse;width:100%;font-size:12px;margin-top:14px}
+  th,td{padding:5px 8px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--rule-soft)}
+  th:first-child,td:first-child{text-align:left;font-weight:500}
+  thead th{color:var(--muted);font-weight:500;border-bottom:1px solid var(--rule)}
+  tbody tr:last-child td{border-bottom:0}
+  td.tot,th.tot{font-weight:600;border-left:1px solid var(--rule-soft)}
+  td.nil{color:#B9C4D0}
+  .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:7px;vertical-align:0}
 
-  #status{padding:26px;text-align:center;color:var(--muted)}
-  .err{background:#fff2f2;border:1px solid #f0c0c0;color:#8a2020;padding:14px 16px;border-radius:6px}
-  .warn{background:#fff8e6;border:1px solid #f0dca8;color:#6b5518;padding:9px 13px;border-radius:6px;font-size:12.5px;margin-bottom:14px}
+  #status{padding:60px 20px;text-align:center;color:var(--muted)}
+  .err{max-width:640px;margin:40px auto;background:#FEF4F1;border:1px solid #F0CDBE;
+       color:#8A3212;padding:18px 20px;border-radius:12px;text-align:left}
+  .warn{background:#FFF9EC;border:1px solid #F0DFB4;color:#6B5518;
+        padding:11px 15px;border-radius:10px;font-size:12.5px;margin:18px 0 0}
+  details{margin:18px 0 0;font-size:12.5px;color:var(--muted)}
+  summary{cursor:pointer;color:var(--ink-2)}
+  details table{margin-top:10px;max-width:520px}
   .hide{display:none}
 </style>
 </head>
 <body>
-<div class="wrap">
 
-  <div class="topbar">
-    <h1>MASTER PLAN DASHBOARD</h1>
-    <div class="controls">
-      <label for="yr">Ship year</label>
-      <select id="yr"></select>
-      <label for="wk">Weeks shown</label>
-      <select id="wk">
-        <option value="8">8</option>
-        <option value="10" selected>10</option>
-        <option value="12">12</option>
-        <option value="16">16</option>
-      </select>
-      <button id="reload" type="button">Refresh data</button>
+<header class="mast">
+  <div class="mast-in">
+    <div>
+      <h1>Master Plan · Shipment Control</h1>
+      <p id="lede">Coconut briquette export plan</p>
     </div>
-    <div class="stamp" id="stamp"></div>
+    <div class="ctl">
+      <label class="field" for="yr">Year <select id="yr"></select></label>
+      <label class="field" for="wk">Horizon <select id="wk">
+        <option value="8">8 weeks</option>
+        <option value="10" selected>10 weeks</option>
+        <option value="12">12 weeks</option>
+        <option value="16">16 weeks</option>
+      </select></label>
+      <button id="reload" type="button">Refresh</button>
+    </div>
   </div>
+</header>
 
-  <div id="status">Loading data…</div>
+<div class="wrap">
+  <div id="status">Loading the master plan…</div>
 
-  <div id="dash" class="hide">
+  <main id="dash" class="hide">
+    <dl class="rail" id="rail"></dl>
     <div id="warnings"></div>
 
+    <div class="sec"><h2>Sales status</h2><span id="sec1-note"></span><i></i></div>
     <div class="grid">
-      <div class="card">
-        <h2 id="t-pie">Sales Status</h2>
-        <div class="sub" id="pie-sub"></div>
+      <section class="panel">
+        <h3 id="t-pie">Order book by status</h3>
+        <p class="cap" id="pie-sub"></p>
         <div id="pie"></div>
-      </div>
-      <div class="card">
-        <h2>Status Order</h2>
-        <div class="sub" id="month-sub"></div>
+      </section>
+      <section class="panel">
+        <h3>Status by loading month</h3>
+        <p class="cap" id="month-sub"></p>
         <div id="month"></div>
         <div id="month-table"></div>
-      </div>
+      </section>
     </div>
 
-    <div class="band">PRODUCT SHIPMENT</div>
-
+    <div class="sec"><h2>Product shipment</h2><span id="sec2-note"></span><i></i></div>
     <div class="grid">
-      <div class="card">
-        <h2>Shipment Plan This Week Onward</h2>
+      <section class="panel">
+        <h3>Shipment plan</h3>
+        <p class="cap">Containers by order status, this week onward</p>
         <div id="plan"></div>
-      </div>
-      <div class="card">
-        <h2>Booking Status This Week Onward</h2>
+      </section>
+      <section class="panel">
+        <h3>Booking status</h3>
+        <p class="cap">Containers with a confirmed booking week</p>
         <div id="booking"></div>
-      </div>
-      <div class="card">
-        <h2>Main Product Status</h2>
+      </section>
+      <section class="panel">
+        <h3>Main product status</h3>
+        <p class="cap">Briquette readiness</p>
         <div id="briq"></div>
-      </div>
-      <div class="card">
-        <h2>Packaging Material Status</h2>
+      </section>
+      <section class="panel">
+        <h3>Packaging material status</h3>
+        <p class="cap">Bag, box and pallet readiness</p>
         <div id="pack"></div>
-      </div>
+      </section>
     </div>
-  </div>
+
+    <details id="diag"><summary>Data check — what the dashboard read from the sheet</summary>
+      <div id="diag-body"></div>
+    </details>
+  </main>
 </div>
 
 <script>
-/* ------------------------------------------------------------------ *
+/* ==================================================================
  *  CONFIG — edit here
- * ------------------------------------------------------------------ */
+ * ================================================================== */
 const CONFIG = {
   CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTSFb8mibeLxtTRWAllYDxiUr6RT0ezSeMRxvEObufk-EIKTQjibnLq9R3d4hbQcDbIf9fvkbmm-TDK/pub?gid=383332130&single=true&output=csv",
-  SALES_TARGET_MT: 13508,   // manual figure shown in the pie subtitle
-  WEEKS_AHEAD: 10,          // default; also switchable in the header
-  WEEKS_BACK: 0             // set to 1 to include last week as well
+  SALES_TARGET_MT: 13508,   // manual figure, shown beside the plan total
+  WEEKS_AHEAD: 10,
+  WEEKS_BACK: 0,            // 1 = also show last week
+  // Forecast lines have no CG-SO number yet. Keep false so they are counted;
+  // set true to go back to counting only rows with a CG-SO number.
+  REQUIRE_SO_NUMBER: false
 };
 
-/* Canonical order + colours for Order status. Anything not listed here is
-   kept, drawn last in grey, and reported in the warning strip.            */
 const STATUS = [
   ["Send to harbor",    "#4472C4"],
   ["Finish Pack",       "#ED7D31"],
@@ -156,21 +208,21 @@ const STATUS = [
   ["Customer Forecast", "#70AD47"]
 ];
 const STATUS_ALIAS = {
-  "send to harbor":"Send to harbor", "send to habor":"Send to harbor",
-  "finish pack":"Finish Pack", "finish packing":"Finish Pack",
+  "send to harbor":"Send to harbor","send to habor":"Send to harbor","send to harbour":"Send to harbor",
+  "finish pack":"Finish Pack","finish packing":"Finish Pack","finished pack":"Finish Pack",
   "packing":"Packing",
-  "on hand":"On Hand", "onhand":"On Hand",
-  "waiting dp":"Waiting DP", "waiting d/p":"Waiting DP",
-  "customer forecast":"Customer Forecast", "forecast":"Customer Forecast"
+  "on hand":"On Hand","onhand":"On Hand","on-hand":"On Hand",
+  "waiting dp":"Waiting DP","waiting d/p":"Waiting DP","waiting down payment":"Waiting DP",
+  "customer forecast":"Customer Forecast","forecast":"Customer Forecast","cust forecast":"Customer Forecast"
 };
-const C_READY="#70AD47", C_NOT="#4472C4", C_CONF="#70AD47", C_MISS="#4472C4";
+const C_READY="#70AD47", C_NOT="#4472C4";
 
-/* ------------------------------------------------------------------ *
- *  CSV parsing
- * ------------------------------------------------------------------ */
+/* ==================================================================
+ *  CSV
+ * ================================================================== */
 function parseCSV(text){
   const rows=[]; let row=[], cell="", q=false;
-  text = text.replace(/\r\n/g,"\n").replace(/\r/g,"\n");
+  text=text.replace(/\r\n/g,"\n").replace(/\r/g,"\n");
   for(let i=0;i<text.length;i++){
     const c=text[i];
     if(q){
@@ -186,12 +238,12 @@ function parseCSV(text){
   if(cell!==""||row.length){ row.push(cell); rows.push(row); }
   return rows;
 }
-const norm = s => String(s==null?"":s).replace(/\s+/g," ").trim().toLowerCase();
+const norm=s=>String(s==null?"":s).replace(/\s+/g," ").trim().toLowerCase();
 
-/* ------------------------------------------------------------------ *
- *  Numbers / weeks
- * ------------------------------------------------------------------ */
-// Sheet uses comma as the decimal separator ("2,5") and no thousand separators.
+/* ==================================================================
+ *  numbers, weeks
+ * ================================================================== */
+// The sheet uses a comma as the decimal mark ("2,5") and no thousand separators.
 function num(v){
   if(v==null) return NaN;
   const s=String(v).trim().replace(/\s/g,"").replace(",",".");
@@ -200,11 +252,10 @@ function num(v){
   return isFinite(n)?n:NaN;
 }
 function isoWeeksInYear(y){
-  const jan1=new Date(Date.UTC(y,0,1)).getUTCDay();      // 0=Sun
+  const jan1=new Date(Date.UTC(y,0,1)).getUTCDay();
   const leap=(y%4===0&&y%100!==0)||y%400===0;
-  return (jan1===4||(leap&&jan1===3))?53:52;             // Thu, or Wed in a leap year
+  return (jan1===4||(leap&&jan1===3))?53:52;
 }
-// "2447" -> {y:2024,w:47}. Rejects 0, blanks, junk.
 function parseWeek(v){
   const n=num(v);
   if(!isFinite(n)||n<=0) return null;
@@ -212,342 +263,333 @@ function parseWeek(v){
   if(s.length<3||s.length>4) return null;
   const w=Number(s.slice(-2)), yy=Number(s.slice(0,-2));
   if(!(w>=1&&w<=53)) return null;
-  return {y:2000+yy, w:w};
+  return {y:2000+yy,w};
 }
-const wkKey = k => String(k.y%100).padStart(2,"0")+String(k.w).padStart(2,"0");
+const wkKey=k=>String(k.y%100).padStart(2,"0")+String(k.w).padStart(2,"0");
 function addWeeks(k,n){
   let y=k.y,w=k.w;
-  while(n>0){ const max=isoWeeksInYear(y); w++; if(w>max){w=1;y++;} n--; }
+  while(n>0){ const m=isoWeeksInYear(y); w++; if(w>m){w=1;y++;} n--; }
   while(n<0){ w--; if(w<1){y--;w=isoWeeksInYear(y);} n++; }
   return {y,w};
 }
 function currentWeek(d=new Date()){
   const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
-  const day=t.getUTCDay()||7;                 // Mon=1..Sun=7
-  t.setUTCDate(t.getUTCDate()+4-day);         // Thursday of this ISO week
+  const day=t.getUTCDay()||7;
+  t.setUTCDate(t.getUTCDate()+4-day);
   const y=t.getUTCFullYear();
-  const jan1=new Date(Date.UTC(y,0,1));
-  const w=Math.ceil(((t-jan1)/86400000+1)/7);
-  return {y,w};
+  return {y,w:Math.ceil(((t-new Date(Date.UTC(y,0,1)))/864e5+1)/7)};
 }
 
-/* ------------------------------------------------------------------ *
- *  Load + shape
- * ------------------------------------------------------------------ */
-let ROWS=[], WARN=[];
+/* ==================================================================
+ *  shape the rows
+ * ================================================================== */
+let ROWS=[], WARN=[], DIAG={};
+const KNOWN=STATUS.map(s=>s[0]);
+const isReady=v=>String(v==null?"":v).trim().slice(-5).toLowerCase()==="ready";
 
 function buildRows(text){
   const raw=parseCSV(text);
   const hIdx=raw.findIndex(r=>r.some(c=>norm(c)==="country"));
-  if(hIdx<0) throw new Error("Header row not found — expected a column named 'Country'.");
+  if(hIdx<0) throw new Error("Could not find the header row — no column named ‘Country’.");
   const head=raw[hIdx].map(norm);
-  const col=name=>{
-    const i=head.indexOf(norm(name));
-    if(i<0) throw new Error("Missing column: "+name);
-    return i;
-  };
+  const col=n=>{const i=head.indexOf(norm(n)); if(i<0) throw new Error("The sheet has no ‘"+n+"’ column."); return i;};
   const iSO=col("SO Number"), iSt=col("Order status"), iFull=col("Full"),
-        iKg=col("Kg/Contaienr"),               // sheet's own spelling
-        iEsw=col("Estimated Shipping Week"),
-        iBk=col("Confirmed Booked Container"),
-        iMon=col("Estimation Loading (Month)"),
+        iKg=col("Kg/Contaienr"), iEsw=col("Estimated Shipping Week"),
+        iBk=col("Confirmed Booked Container"), iMon=col("Estimation Loading (Month)"),
         iShip=col("Ship"),
         iBriq=head.findIndex(h=>h.startsWith("status briquettes")),
         iPack=head.findIndex(h=>h.startsWith("status packing material"));
-  if(iBriq<0) throw new Error("Missing column: Status Briquettes");
-  if(iPack<0) throw new Error("Missing column: Status packing material");
+  if(iBriq<0) throw new Error("The sheet has no ‘Status Briquettes’ column.");
+  if(iPack<0) throw new Error("The sheet has no ‘Status packing material’ column.");
 
-  const unknown=new Set();
-  const out=[];
+  const unknown=new Set(); const out=[];
+  let cancelled=0, noStatus=0, skipped=0, noSO=0;
+
   for(let r=hIdx+1;r<raw.length;r++){
-    const c=raw[r];
-    if(!c || c.length<5) continue;
-    if(!/^CG-SO/i.test(String(c[iSO]||"").trim())) continue;   // row filter
+    const c=raw[r]; if(!c||c.length<5) continue;
+    const so=String(c[iSO]||"").trim(), hasSO=/^CG-SO/i.test(so);
     const st=norm(c[iSt]);
-    if(st==="cancelled"||st==="cancel") continue;              // cancelled excluded
-    if(st==="") continue;
-    let label=STATUS_ALIAS[st];
-    if(!label){ label=String(c[iSt]).trim(); unknown.add(label); }
-    const full=num(c[iFull]);
+    if(st==="") { noStatus++; continue; }
+    if(st==="cancelled"||st==="cancel"){ cancelled++; continue; }
+    const known=STATUS_ALIAS[st];
+    // Confirmed orders carry a CG-SO number. Forecast lines do not yet, so they
+    // are admitted on a recognised Order status instead.
+    if(!hasSO && (CONFIG.REQUIRE_SO_NUMBER || !known)){ skipped++; continue; }
+    if(!hasSO) noSO++;
+    const label=known||String(c[iSt]).trim();
+    if(!known) unknown.add(label);   // only flag values that actually reached the charts
+    const full=num(c[iFull]), kg=num(c[iKg]), esw=parseWeek(c[iEsw]), shipY=num(c[iShip]);
     out.push({
-      status:label,
-      full: isFinite(full)?full:0,
-      mt: (isFinite(num(c[iKg]))?num(c[iKg]):0)/1000,
-      esw: parseWeek(c[iEsw]),
-      booked: parseWeek(c[iBk])!==null,
-      month: (()=>{const m=num(c[iMon]);return (m>=1&&m<=12)?Math.trunc(m):null;})(),
-      ship: (()=>{const y=num(c[iShip]);return isFinite(y)?Math.trunc(y):null;})(),
-      briqReady: isReady(c[iBriq]),
-      packReady: isReady(c[iPack])
+      so, status:label,
+      full:isFinite(full)?full:0,
+      mt:(isFinite(kg)?kg:0)/1000,
+      esw,
+      booked:parseWeek(c[iBk])!==null,
+      month:(()=>{const m=num(c[iMon]);return (m>=1&&m<=12)?Math.trunc(m):null;})(),
+      // Forecast rows may leave Ship blank; fall back to the year inside the week.
+      year:isFinite(shipY)?Math.trunc(shipY):(esw?esw.y:null),
+      briqReady:isReady(c[iBriq]),
+      packReady:isReady(c[iPack])
     });
   }
+
   WARN=[];
-  if(unknown.size) WARN.push("Order status not in the known list, shown in grey: "+[...unknown].join(", "));
+  if(unknown.size) WARN.push("Order status not on the known list, drawn in grey: "+
+    [...unknown].map(u=>"“"+u+"”").join(", ")+".");
   const noWeek=out.filter(r=>!r.esw).length;
   if(noWeek) WARN.push(noWeek>1
-    ? noWeek+" rows have no usable Estimated Shipping Week, so they sit outside the four weekly charts."
-    : "1 row has no usable Estimated Shipping Week, so it sits outside the four weekly charts.");
+    ? noWeek+" rows have no readable Estimated Shipping Week, so they sit outside the four weekly charts."
+    : "One row has no readable Estimated Shipping Week, so it sits outside the four weekly charts.");
+  DIAG={kept:out.length, cancelled, noStatus, skipped, noSO};
   return out;
 }
-// RIGHT(5)="Ready", trimmed and case-insensitive.
-function isReady(v){
-  const s=String(v==null?"":v).trim();
-  return s.slice(-5).toLowerCase()==="ready";
-}
 function statusList(rows){
-  const known=STATUS.map(s=>s[0]);
-  const extra=[...new Set(rows.map(r=>r.status))].filter(s=>!known.includes(s));
-  return known.concat(extra);
+  const extra=[...new Set(rows.map(r=>r.status))].filter(s=>!KNOWN.includes(s));
+  return KNOWN.concat(extra);
 }
-const colourOf=(()=>{const m=new Map(STATUS);return s=>m.get(s)||"#9aa7bd";})();
+const colourOf=(m=>s=>m.get(s)||"#9AA7B8")(new Map(STATUS));
 
-/* ------------------------------------------------------------------ *
- *  SVG helpers
- * ------------------------------------------------------------------ */
+/* ==================================================================
+ *  drawing helpers
+ * ================================================================== */
 const NS="http://www.w3.org/2000/svg";
-function el(tag,attrs,text){
-  const n=document.createElementNS(NS,tag);
-  for(const k in attrs) n.setAttribute(k,attrs[k]);
-  if(text!=null) n.textContent=text;
-  return n;
-}
-function svgRoot(host,w,h){
-  host.innerHTML="";
-  const s=el("svg",{viewBox:`0 0 ${w} ${h}`,role:"img"});
-  host.appendChild(s); return s;
-}
-function legend(host,items){
-  const d=document.createElement("div"); d.className="legend";
-  items.forEach(([label,colour])=>{
-    const s=document.createElement("span");
-    s.innerHTML=`<i style="background:${colour}"></i>${label}`;
-    d.appendChild(s);
-  });
+function el(t,a,x){const n=document.createElementNS(NS,t);for(const k in a)n.setAttribute(k,a[k]);if(x!=null)n.textContent=x;return n;}
+function svgIn(host,w,h){const s=el("svg",{viewBox:`0 0 ${w} ${h}`,role:"img"});host.appendChild(s);return s;}
+function key(host,items){
+  const d=document.createElement("div"); d.className="key";
+  items.forEach(([l,c])=>{const s=document.createElement("span");
+    s.innerHTML=`<i style="background:${c}"></i>${l}`; d.appendChild(s);});
   host.appendChild(d);
 }
 const fmt=(n,d=0)=>n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
-// Keep numbers legible on light fills such as the yellow and grey segments.
 function textOn(hex){
   const c=hex.replace("#",""), n=parseInt(c.length===3?c.replace(/./g,m=>m+m):c,16);
-  const L=(0.299*(n>>16&255)+0.587*(n>>8&255)+0.114*(n&255))/255;
-  return L>0.62?"#20304a":"#ffffff";
+  return (0.299*(n>>16&255)+0.587*(n>>8&255)+0.114*(n&255))/255>0.62?"#16304A":"#ffffff";
 }
-function tip(node,text){ node.appendChild(el("title",{},text)); }
-
-/* ------------------------------------------------------------------ *
- *  Chart: stacked bars (absolute or 100%)
- * ------------------------------------------------------------------ */
-// Round the axis up to a readable step; container counts stay on whole numbers.
+const tip=(n,t)=>n.appendChild(el("title",{},t));
 function niceAxis(max,integer){
-  if(!(max>0)) return {max:integer?1:1,n:1};
+  if(!(max>0)) return {max:1,n:1};
   const raw=max/5, mag=Math.pow(10,Math.floor(Math.log10(raw)));
   let step=[1,2,2.5,5,10].map(m=>m*mag).find(s=>s>=raw)||raw;
   if(integer) step=Math.max(1,Math.round(step));
   const top=Math.ceil(max/step)*step;
   return {max:top,n:Math.max(1,Math.round(top/step))};
 }
-function stackedBars(host,{cats,series,pct=false,yTitle="Container",xTitle="Week",unit="",dec=0,showValues=true}){
-  const W=640,H=330,L=52,R=14,T=14,B=46;
-  const pw=W-L-R, ph=H-T-B;
+
+/* stacked columns, absolute or 100% */
+function bars(host,{cats,series,pct=false,yTitle="Containers",xTitle="Week",unit="",dec=0,
+                    showValues=true,nowIndex=-1}){
+  const W=660,H=340,L=54,R=16,T=18,B=48, pw=W-L-R, ph=H-T-B;
   host.innerHTML="";
-  legend(host,series.map(s=>[s.name,s.colour]));
-  const svg=svgRoot(document.createElement("div"),W,H);
-  host.appendChild(svg.parentNode);
+  key(host,series.map(s=>[s.name,s.colour]));
+  const svg=svgIn(host,W,H);
 
   const totals=cats.map((_,i)=>series.reduce((a,s)=>a+(s.data[i]||0),0));
-  const axis = pct ? {max:100,n:5} : niceAxis(Math.max(...totals,0),dec===0);
-  const yMax=axis.max, ticks=axis.n;
-  for(let t=0;t<=ticks;t++){
-    const v=yMax*t/ticks, y=T+ph-ph*t/ticks;
-    svg.appendChild(el("line",{x1:L,x2:L+pw,y1:y,y2:y,class:t?"gl":"ax"}));
-    svg.appendChild(el("text",{x:L-7,y:y+4,"text-anchor":"end",class:"tk"}, pct?v+"%":fmt(v,dec)));
+  const ax=pct?{max:100,n:5}:niceAxis(Math.max(...totals,0),dec===0);
+  for(let t=0;t<=ax.n;t++){
+    const v=ax.max*t/ax.n, y=T+ph-ph*t/ax.n;
+    svg.appendChild(el("line",{x1:L,x2:L+pw,y1:y,y2:y,class:t?"gl":"ax","stroke-width":1}));
+    svg.appendChild(el("text",{x:L-8,y:y+4,"text-anchor":"end",class:"tk"},pct?v+"%":fmt(v,dec)));
   }
-  svg.appendChild(el("line",{x1:L,x2:L,y1:T,y2:T+ph,class:"ax"}));
 
-  const bw=Math.min(46,pw/cats.length*0.62), gap=pw/cats.length;
+  const gap=pw/cats.length, bw=Math.min(48,gap*0.6);
   cats.forEach((cat,i)=>{
-    const cx=L+gap*i+gap/2, x=cx-bw/2;
-    const tot=totals[i];
+    const cx=L+gap*i+gap/2, x=cx-bw/2, tot=totals[i];
+    if(i===nowIndex)
+      svg.appendChild(el("rect",{x:cx-gap/2+1,y:T-6,width:gap-2,height:ph+6,fill:"#DB5C1E",opacity:.055,rx:5}));
     let acc=0;
     series.forEach(s=>{
       const raw=s.data[i]||0; if(!raw) return;
       const v=pct?(tot?raw/tot*100:0):raw;
-      const h=ph*v/yMax, y=T+ph-ph*(acc+v)/yMax;
+      const h=ph*v/ax.max, y=T+ph-ph*(acc+v)/ax.max;
       const rect=el("rect",{x,y,width:bw,height:h,fill:s.colour});
       tip(rect,`${cat} · ${s.name}: ${fmt(raw,dec)}${unit}${pct?` (${fmt(v,0)}%)`:""}`);
       svg.appendChild(rect);
-      if(showValues&&h>13&&bw>20)
-        svg.appendChild(el("text",{x:cx,y:y+h/2+4,"text-anchor":"middle",class:"vl",
-          fill:textOn(s.colour)},fmt(raw,dec)));
+      if(showValues&&h>14&&bw>22)
+        svg.appendChild(el("text",{x:cx,y:y+h/2+4,"text-anchor":"middle",class:"vl",fill:textOn(s.colour)},fmt(raw,dec)));
       acc+=v;
     });
-    if(!pct&&tot)
-      svg.appendChild(el("text",{x:cx,y:T+ph-ph*tot/yMax-5,"text-anchor":"middle",class:"vd"},fmt(tot,dec)));
-    svg.appendChild(el("text",{x:cx,y:T+ph+16,"text-anchor":"middle",class:"tk"},cat));
+    if(!pct&&tot) svg.appendChild(el("text",{x:cx,y:T+ph-ph*tot/ax.max-7,"text-anchor":"middle",class:"vd"},fmt(tot,dec)));
+    svg.appendChild(el("text",{x:cx,y:T+ph+17,"text-anchor":"middle",class:"tk"+(i===nowIndex?" now":"")},cat));
   });
-  svg.appendChild(el("line",{x1:L,x2:L+pw,y1:T+ph,y2:T+ph,class:"ax"}));
+  svg.appendChild(el("line",{x1:L,x2:L+pw,y1:T+ph,y2:T+ph,class:"ax","stroke-width":1}));
   svg.appendChild(el("text",{x:L+pw/2,y:H-6,"text-anchor":"middle",class:"axt"},xTitle));
-  svg.appendChild(el("text",{x:14,y:T+ph/2,"text-anchor":"middle",class:"axt",
-    transform:`rotate(-90 14 ${T+ph/2})`},yTitle));
+  svg.appendChild(el("text",{x:15,y:T+ph/2,"text-anchor":"middle",class:"axt",
+    transform:`rotate(-90 15 ${T+ph/2})`},yTitle));
 }
 
-/* ------------------------------------------------------------------ *
- *  Chart: donut
- * ------------------------------------------------------------------ */
-function donut(host,slices,centreTop,centreBottom){
-  const W=560,H=300,cx=175,cy=150,rO=115,rI=64;
+/* donut with a side reading */
+function donut(host,slices,mid,sub){
+  const W=580,H=310,cx=163,cy=155,rO=118,rI=72;
   host.innerHTML="";
-  const svg=svgRoot(document.createElement("div"),W,H);
-  host.appendChild(svg.parentNode);
+  const svg=svgIn(host,W,H);
   const total=slices.reduce((a,s)=>a+s.value,0);
   let ang=-Math.PI/2;
   slices.forEach(s=>{
     if(s.value<=0) return;
-    const sweep=total?s.value/total*Math.PI*2:0, end=ang+sweep;
-    const big=sweep>Math.PI?1:0;
+    const sweep=total?s.value/total*2*Math.PI:0, end=ang+sweep, big=sweep>Math.PI?1:0;
     const P=(r,a)=>[cx+r*Math.cos(a),cy+r*Math.sin(a)];
     const [x1,y1]=P(rO,ang),[x2,y2]=P(rO,end),[x3,y3]=P(rI,end),[x4,y4]=P(rI,ang);
-    const path=el("path",{fill:s.colour,stroke:"#fff","stroke-width":1.5,
+    const p=el("path",{fill:s.colour,stroke:"#fff","stroke-width":2,
       d:`M${x1} ${y1}A${rO} ${rO} 0 ${big} 1 ${x2} ${y2}L${x3} ${y3}A${rI} ${rI} 0 ${big} 0 ${x4} ${y4}Z`});
-    tip(path,`${s.name}: ${fmt(s.value)} MT (${fmt(s.value/total*100,1)}%)`);
-    svg.appendChild(path);
-    if(sweep>0.35){
+    tip(p,`${s.name}: ${fmt(s.value)} MT (${fmt(s.value/total*100,1)}%)`);
+    svg.appendChild(p);
+    if(sweep>0.4){
       const [lx,ly]=P((rO+rI)/2,ang+sweep/2);
-      svg.appendChild(el("text",{x:lx,y:ly+4,"text-anchor":"middle",class:"vl",
-        fill:textOn(s.colour)},fmt(s.value)));
+      svg.appendChild(el("text",{x:lx,y:ly+4,"text-anchor":"middle",class:"vl",fill:textOn(s.colour)},fmt(s.value)));
     }
     ang=end;
   });
-  svg.appendChild(el("text",{x:cx,y:cy-4,"text-anchor":"middle",
-    style:"font-size:23px;font-weight:700;fill:#20304a"},centreTop));
-  svg.appendChild(el("text",{x:cx,y:cy+17,"text-anchor":"middle",
-    style:"font-size:12px;fill:#6b7a90"},centreBottom));
+  svg.appendChild(el("text",{x:cx,y:cy-2,"text-anchor":"middle",
+    style:"font-size:27px;font-weight:600;fill:#16304A;letter-spacing:-.02em"},mid));
+  svg.appendChild(el("text",{x:cx,y:cy+19,"text-anchor":"middle",style:"font-size:12px;fill:#64798C"},sub));
 
-  let ly=42;
+  let y=44;
   slices.forEach(s=>{
-    svg.appendChild(el("rect",{x:322,y:ly-10,width:12,height:12,rx:2,fill:s.colour}));
-    svg.appendChild(el("text",{x:342,y:ly,style:"font-size:12.5px;fill:#20304a"},s.name));
-    svg.appendChild(el("text",{x:W-10,y:ly,"text-anchor":"end",
-      style:"font-size:12.5px;font-weight:700;fill:#20304a"},fmt(s.value)+" MT"));
-    ly+=27;
+    svg.appendChild(el("rect",{x:318,y:y-10,width:11,height:11,rx:3,fill:s.colour}));
+    svg.appendChild(el("text",{x:338,y:y,style:"font-size:13px;fill:#16304A"},s.name));
+    svg.appendChild(el("text",{x:W-54,y:y,"text-anchor":"end",
+      style:"font-size:13px;font-weight:600;fill:#16304A"},fmt(s.value)));
+    svg.appendChild(el("text",{x:W-6,y:y,"text-anchor":"end",style:"font-size:11.5px;fill:#64798C"},
+      total?fmt(s.value/total*100,1)+"%":"—"));
+    y+=29;
   });
 }
 
-/* ------------------------------------------------------------------ *
- *  Render
- * ------------------------------------------------------------------ */
+/* ==================================================================
+ *  render
+ * ================================================================== */
 function render(){
   const year=document.getElementById("yr").value;
   const nWeeks=Number(document.getElementById("wk").value)||CONFIG.WEEKS_AHEAD;
-  const yearRows = year==="all" ? ROWS : ROWS.filter(r=>String(r.ship)===year);
-  const label = year==="all" ? "All years" : year;
-
-  const w=document.getElementById("warnings");
-  w.innerHTML = WARN.length ? `<div class="warn">${WARN.join("<br>")}</div>` : "";
-
+  const inYear=year==="all"?ROWS:ROWS.filter(r=>String(r.year)===year);
+  const label=year==="all"?"all years":year;
   const statuses=statusList(ROWS);
 
-  /* 1 — Sales status, MT */
-  const pieSlices=statuses.map(s=>({
-    name:s, colour:colourOf(s),
-    value:yearRows.filter(r=>r.status===s).reduce((a,r)=>a+r.mt,0)
-  })).filter(s=>s.value>0);
-  const totalMT=pieSlices.reduce((a,s)=>a+s.value,0);
-  document.getElementById("t-pie").textContent=`Sales Status ${label}`;
-  document.getElementById("pie-sub").innerHTML=
-    `Target <b>${fmt(CONFIG.SALES_TARGET_MT)} MT</b> · plan on the sheet <b>${fmt(totalMT)} MT</b>`;
-  donut(document.getElementById("pie"),pieSlices,fmt(totalMT),"MT on plan");
+  document.getElementById("warnings").innerHTML=
+    WARN.length?`<div class="warn">${WARN.join("<br>")}</div>`:"";
 
-  /* 2 — Status order by month, 100% stacked + table */
-  const months=[...Array(12)].map((_,i)=>i+1);
-  const mSeries=statuses.map(s=>({
-    name:s, colour:colourOf(s),
-    data:months.map(m=>yearRows.filter(r=>r.status===s&&r.month===m).reduce((a,r)=>a+r.mt,0))
-  })).filter(s=>s.data.some(v=>v>0));
-  document.getElementById("month-sub").textContent=`${label} status order by loading month, in MT`;
-  stackedBars(document.getElementById("month"),{
-    cats:months.map(String), series:mSeries, pct:true, showValues:false,
-    yTitle:"Share", xTitle:"Loading month", unit:" MT"
-  });
-  let html='<table><thead><tr><th>Status</th>'+months.map(m=>`<th>${m}</th>`).join("")+'<th>Total</th></tr></thead><tbody>';
-  mSeries.forEach(s=>{
-    const tot=s.data.reduce((a,b)=>a+b,0);
-    html+=`<tr><td><span class="sw" style="background:${s.colour}"></span>${s.name}</td>`
-        + s.data.map(v=>`<td>${v?fmt(v):"·"}</td>`).join("")
-        + `<td>${fmt(tot)}</td></tr>`;
-  });
-  html+="</tbody></table>";
-  document.getElementById("month-table").innerHTML=html;
-
-  /* 3–6 — weekly, by container count (sum of Full) */
+  /* --- weekly window --- */
   const start=addWeeks(currentWeek(),-CONFIG.WEEKS_BACK);
   const weeks=[...Array(nWeeks)].map((_,i)=>addWeeks(start,i));
   const keys=weeks.map(wkKey);
-  const inWeek=keys.map(k=>ROWS.filter(r=>r.esw&&wkKey(r.esw)===k));
-  const sum=(rows,f)=>rows.filter(f).reduce((a,r)=>a+r.full,0);
+  const nowIndex=CONFIG.WEEKS_BACK;
+  const bucket=keys.map(k=>ROWS.filter(r=>r.esw&&wkKey(r.esw)===k));
+  const sum=(rs,f)=>rs.filter(f).reduce((a,r)=>a+r.full,0);
+  const flat=bucket.flat();
+  const cnt=f=>flat.filter(f).reduce((a,r)=>a+r.full,0);
+  const winTotal=cnt(()=>true);
+  const pctOf=n=>winTotal?Math.round(n/winTotal*100):0;
 
-  stackedBars(document.getElementById("plan"),{
-    cats:keys,
-    series:statuses.map(s=>({name:s,colour:colourOf(s),
-      data:inWeek.map(rs=>sum(rs,r=>r.status===s))})).filter(s=>s.data.some(v=>v>0))
+  /* --- readout rail --- */
+  const planMT=inYear.reduce((a,r)=>a+r.mt,0);
+  const gap=planMT-CONFIG.SALES_TARGET_MT;
+  const conf=cnt(r=>r.booked), rdyB=cnt(r=>r.briqReady), rdyP=cnt(r=>r.packReady);
+  const rail=[
+    ["Plan on the sheet",fmt(planMT),"MT",
+      `${gap>=0?"+":"−"}${fmt(Math.abs(gap))} against the ${fmt(CONFIG.SALES_TARGET_MT)} MT target`,gap<0],
+    [`Containers, weeks ${keys[0]}–${keys[keys.length-1]}`,fmt(winTotal),"",
+      `${nWeeks} weeks from ${keys[nowIndex]}`,false],
+    ["Booking confirmed",pctOf(conf),"%",`${fmt(winTotal-conf)} still to book`,pctOf(conf)<80],
+    ["Briquettes ready",pctOf(rdyB),"%",`${fmt(winTotal-rdyB)} not ready`,pctOf(rdyB)<80],
+    ["Packaging ready",pctOf(rdyP),"%",`${fmt(winTotal-rdyP)} not ready`,pctOf(rdyP)<80]
+  ];
+  document.getElementById("rail").innerHTML=rail.map(([k,v,u,n,low])=>
+    `<div><dt>${k}</dt><dd>${v}${u?`<small>${u}</small>`:""}</dd>
+     <p class="note${low?" low":""}">${n}</p></div>`).join("");
+
+  /* --- 1 · order book by status --- */
+  const slices=statuses.map(s=>({name:s,colour:colourOf(s),
+    value:inYear.filter(r=>r.status===s).reduce((a,r)=>a+r.mt,0)})).filter(s=>s.value>0);
+  document.getElementById("t-pie").textContent=`Order book by status · ${label}`;
+  document.getElementById("pie-sub").innerHTML=
+    `<b>${fmt(planMT)} MT</b> planned against a <b>${fmt(CONFIG.SALES_TARGET_MT)} MT</b> target`;
+  donut(document.getElementById("pie"),slices,fmt(planMT),"MT on plan");
+
+  /* --- 2 · by loading month --- */
+  const months=[...Array(12)].map((_,i)=>i+1);
+  const mSeries=statuses.map(s=>({name:s,colour:colourOf(s),
+    data:months.map(m=>inYear.filter(r=>r.status===s&&r.month===m).reduce((a,r)=>a+r.mt,0))
+  })).filter(s=>s.data.some(v=>v>0));
+  document.getElementById("month-sub").textContent=`Share of each loading month, ${label}, in MT`;
+  bars(document.getElementById("month"),{cats:months.map(String),series:mSeries,pct:true,
+    showValues:false,yTitle:"Share",xTitle:"Loading month",unit:" MT"});
+
+  let t=`<table><thead><tr><th>Status</th>${months.map(m=>`<th>${m}</th>`).join("")}<th class="tot">Total</th></tr></thead><tbody>`;
+  mSeries.forEach(s=>{
+    t+=`<tr><td><span class="sw" style="background:${s.colour}"></span>${s.name}</td>`
+      + s.data.map(v=>v?`<td>${fmt(v)}</td>`:`<td class="nil">·</td>`).join("")
+      + `<td class="tot">${fmt(s.data.reduce((a,b)=>a+b,0))}</td></tr>`;
   });
-  stackedBars(document.getElementById("booking"),{
-    cats:keys,
-    series:[
-      {name:"Confirmed",colour:C_CONF,data:inWeek.map(rs=>sum(rs,r=>r.booked))},
-      {name:"Missing",  colour:C_MISS,data:inWeek.map(rs=>sum(rs,r=>!r.booked))}
-    ]
-  });
-  stackedBars(document.getElementById("briq"),{
-    cats:keys,
-    series:[
-      {name:"Ready",    colour:C_READY,data:inWeek.map(rs=>sum(rs,r=>r.briqReady))},
-      {name:"Not Ready",colour:C_NOT,  data:inWeek.map(rs=>sum(rs,r=>!r.briqReady))}
-    ]
-  });
-  stackedBars(document.getElementById("pack"),{
-    cats:keys,
-    series:[
-      {name:"Ready",    colour:C_READY,data:inWeek.map(rs=>sum(rs,r=>r.packReady))},
-      {name:"Not Ready",colour:C_NOT,  data:inWeek.map(rs=>sum(rs,r=>!r.packReady))}
-    ]
-  });
+  t+=`<tr><td>All statuses</td>${months.map((_,i)=>{
+        const v=mSeries.reduce((a,s)=>a+s.data[i],0);
+        return v?`<td class="tot">${fmt(v)}</td>`:`<td class="nil">·</td>`;}).join("")}
+      <td class="tot">${fmt(planMT)}</td></tr></tbody></table>`;
+  document.getElementById("month-table").innerHTML=t;
+
+  /* --- 3–6 · weekly --- */
+  const mk=(id,series)=>bars(document.getElementById(id),{cats:keys,series,nowIndex});
+  mk("plan",statuses.map(s=>({name:s,colour:colourOf(s),
+    data:bucket.map(rs=>sum(rs,r=>r.status===s))})).filter(s=>s.data.some(v=>v>0)));
+  mk("booking",[
+    {name:"Confirmed",colour:C_READY,data:bucket.map(rs=>sum(rs,r=>r.booked))},
+    {name:"Missing",  colour:C_NOT,  data:bucket.map(rs=>sum(rs,r=>!r.booked))}]);
+  mk("briq",[
+    {name:"Ready",    colour:C_READY,data:bucket.map(rs=>sum(rs,r=>r.briqReady))},
+    {name:"Not ready",colour:C_NOT,  data:bucket.map(rs=>sum(rs,r=>!r.briqReady))}]);
+  mk("pack",[
+    {name:"Ready",    colour:C_READY,data:bucket.map(rs=>sum(rs,r=>r.packReady))},
+    {name:"Not ready",colour:C_NOT,  data:bucket.map(rs=>sum(rs,r=>!r.packReady))}]);
+
+  document.getElementById("sec1-note").textContent=`Whole year · ${fmt(inYear.length)} lines`;
+  document.getElementById("sec2-note").textContent=`Weeks ${keys[0]} to ${keys[keys.length-1]}`;
+
+  /* --- diagnostics --- */
+  const byStatus=statuses.map(s=>[s,
+    inYear.filter(r=>r.status===s).length,
+    inYear.filter(r=>r.status===s).reduce((a,r)=>a+r.mt,0)]).filter(r=>r[1]);
+  document.getElementById("diag-body").innerHTML=
+    `<table><thead><tr><th>Status</th><th>Lines</th><th class="tot">MT</th></tr></thead><tbody>`
+    + byStatus.map(([s,n,mt])=>`<tr><td><span class="sw" style="background:${colourOf(s)}"></span>${s}</td><td>${fmt(n)}</td><td class="tot">${fmt(mt)}</td></tr>`).join("")
+    + `<tr><td>Total, ${label}</td><td>${fmt(inYear.length)}</td><td class="tot">${fmt(planMT)}</td></tr></tbody></table>`
+    + `<p>Read from the sheet: ${fmt(DIAG.kept)} usable lines across all years`
+    + `, of which ${fmt(DIAG.noSO)} have no CG-SO number yet (forecast and similar).`
+    + ` Left out: ${fmt(DIAG.cancelled)} cancelled, ${fmt(DIAG.noStatus)} with a blank order status`
+    + `, ${fmt(DIAG.skipped)} with neither a CG-SO number nor a recognised status.</p>`;
 }
 
-/* ------------------------------------------------------------------ *
- *  Boot
- * ------------------------------------------------------------------ */
+/* ==================================================================
+ *  boot
+ * ================================================================== */
 async function load(){
   const st=document.getElementById("status");
   document.getElementById("dash").classList.add("hide");
-  st.classList.remove("hide"); st.className=""; st.textContent="Loading data…";
+  st.className=""; st.textContent="Loading the master plan…";
   try{
     const res=await fetch(CONFIG.CSV_URL+"&_="+Date.now());
-    if(!res.ok) throw new Error("The sheet returned HTTP "+res.status+".");
+    if(!res.ok) throw new Error("The sheet replied with HTTP "+res.status+".");
     const text=await res.text();
-    if(/^\s*</.test(text)) throw new Error("The sheet returned a web page instead of CSV. Re-publish it to the web as CSV.");
+    if(/^\s*</.test(text)) throw new Error("The sheet returned a web page instead of CSV. Publish it to the web again, choosing CSV.");
     ROWS=buildRows(text);
-    if(!ROWS.length) throw new Error("No rows matched the CG-SO filter.");
+    if(!ROWS.length) throw new Error("The sheet loaded, but no rows carried a usable order status.");
 
-    const years=[...new Set(ROWS.map(r=>r.ship).filter(Boolean))].sort();
-    const count={}; ROWS.forEach(r=>{if(r.ship)count[r.ship]=(count[r.ship]||0)+1;});
+    const count={}; ROWS.forEach(r=>{if(r.year)count[r.year]=(count[r.year]||0)+1;});
+    const years=Object.keys(count).sort();
     const common=years.slice().sort((a,b)=>count[b]-count[a])[0];
     const sel=document.getElementById("yr");
-    sel.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join("")
-                 +'<option value="all">All years</option>';
+    sel.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join("")+`<option value="all">All years</option>`;
     sel.value=String(common);
 
-    const now=new Date(), cw=currentWeek();
-    document.getElementById("stamp").textContent=
-      `Week ${wkKey(cw)} · refreshed ${now.toLocaleString("en-GB",{hour12:false})} · ${fmt(ROWS.length)} rows`;
+    document.getElementById("lede").textContent=
+      `Coconut briquette export plan · week ${wkKey(currentWeek())} · read ${new Date().toLocaleString("en-GB",{hour12:false})}`;
 
     st.classList.add("hide");
     document.getElementById("dash").classList.remove("hide");
     render();
   }catch(e){
     st.className="err";
-    st.innerHTML=`<b>Could not load the data.</b><br>${e.message}`
-      +`<br><br>Check that the sheet is still published to the web, then use Refresh data.`;
+    st.innerHTML=`<b>The master plan did not load.</b><p>${e.message}</p>`
+      +`<p>Check that the sheet is still published to the web as CSV, then press Refresh.</p>`;
   }
 }
 document.getElementById("reload").addEventListener("click",load);
