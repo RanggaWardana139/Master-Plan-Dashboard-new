@@ -72,7 +72,9 @@
   .sec i{flex:1;height:1px;background:var(--rule);display:block}
 
   .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
-  @media(max-width:1000px){.grid{grid-template-columns:1fr}}
+  /* the month panel carries a 14-column table, so it takes the larger share */
+  .grid.split{grid-template-columns:minmax(0,.45fr) minmax(0,.55fr)}
+  @media(max-width:1000px){.grid,.grid.split{grid-template-columns:1fr}}
 
   .panel{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:18px 20px 20px}
   .panel h3{margin:0;font-size:15px;font-weight:600}
@@ -92,9 +94,23 @@
   .ax{stroke:var(--rule)}
   .gl{stroke:var(--rule-soft)}
 
-  table{border-collapse:collapse;width:100%;font-size:12px;margin-top:14px}
-  th,td{padding:5px 8px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--rule-soft)}
-  th:first-child,td:first-child{text-align:left;font-weight:500}
+  #pie svg{max-width:400px;margin:0 auto}
+
+  /* reading under the ring */
+  .ring-key{
+    margin:14px 0 0;padding-top:14px;border-top:1px solid var(--rule-soft);
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:2px 22px;
+  }
+  .ring-key div{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:3px 0}
+  .ring-key dt{display:flex;align-items:center;gap:8px;font-size:13px;margin:0}
+  .ring-key dt i{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+  .ring-key dd{margin:0;font-size:13px;font-weight:600;white-space:nowrap}
+  .ring-key dd em{font-style:normal;font-weight:400;color:var(--muted);font-size:11.5px;margin-left:8px}
+
+  .scroll{overflow-x:auto;margin-top:14px}
+  table{border-collapse:collapse;width:100%;font-size:11.5px}
+  th,td{padding:5px 5px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--rule-soft)}
+  th:first-child,td:first-child{text-align:left;font-weight:500;padding-left:0;padding-right:10px}
   thead th{color:var(--muted);font-weight:500;border-bottom:1px solid var(--rule)}
   tbody tr:last-child td{border-bottom:0}
   td.tot,th.tot{font-weight:600;border-left:1px solid var(--rule-soft)}
@@ -141,7 +157,7 @@
     <div id="warnings"></div>
 
     <div class="sec"><h2>Sales status</h2><span id="sec1-note"></span><i></i></div>
-    <div class="grid">
+    <div class="grid split">
       <section class="panel">
         <h3 id="t-pie">Order book by status</h3>
         <p class="cap" id="pie-sub"></p>
@@ -151,7 +167,7 @@
         <h3>Status by loading month</h3>
         <p class="cap" id="month-sub"></p>
         <div id="month"></div>
-        <div id="month-table"></div>
+        <div class="scroll" id="month-table"></div>
       </section>
     </div>
 
@@ -191,7 +207,7 @@
  * ================================================================== */
 const CONFIG = {
   CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTSFb8mibeLxtTRWAllYDxiUr6RT0ezSeMRxvEObufk-EIKTQjibnLq9R3d4hbQcDbIf9fvkbmm-TDK/pub?gid=383332130&single=true&output=csv",
-  SALES_TARGET_MT: 13508,   // manual figure, shown beside the plan total
+  SALES_TARGET_MT: 13587,   // original target at 31 Dec 2025
   WEEKS_AHEAD: 10,
   WEEKS_BACK: 0,            // 1 = also show last week
   // Forecast lines have no CG-SO number yet. Keep false so they are counted;
@@ -200,12 +216,12 @@ const CONFIG = {
 };
 
 const STATUS = [
-  ["Send to harbor",    "#4472C4"],
+  ["Send to harbor",    "#70AD47"],
   ["Finish Pack",       "#ED7D31"],
   ["Packing",           "#FFC000"],
   ["On Hand",           "#A5A5A5"],
   ["Waiting DP",        "#5B9BD5"],
-  ["Customer Forecast", "#70AD47"]
+  ["Customer Forecast", "#2F5597"]
 ];
 const STATUS_ALIAS = {
   "send to harbor":"Send to harbor","send to habor":"Send to harbor","send to harbour":"Send to harbor",
@@ -215,6 +231,8 @@ const STATUS_ALIAS = {
   "waiting dp":"Waiting DP","waiting d/p":"Waiting DP","waiting down payment":"Waiting DP",
   "customer forecast":"Customer Forecast","forecast":"Customer Forecast","cust forecast":"Customer Forecast"
 };
+// Booking and readiness charts keep their own two colours; they answer a
+// yes/no question and are not tied to the order-status palette above.
 const C_READY="#70AD47", C_NOT="#4472C4";
 
 /* ==================================================================
@@ -418,9 +436,9 @@ function bars(host,{cats,series,pct=false,yTitle="Containers",xTitle="Week",unit
     transform:`rotate(-90 15 ${T+ph/2})`},yTitle));
 }
 
-/* donut with a side reading */
+/* donut, with the reading listed underneath */
 function donut(host,slices,mid,sub){
-  const W=580,H=310,cx=163,cy=155,rO=118,rI=72;
+  const W=380,H=300,cx=190,cy=150,rO=116,rI=71;
   host.innerHTML="";
   const svg=svgIn(host,W,H);
   const total=slices.reduce((a,s)=>a+s.value,0);
@@ -444,16 +462,14 @@ function donut(host,slices,mid,sub){
     style:"font-size:27px;font-weight:600;fill:#16304A;letter-spacing:-.02em"},mid));
   svg.appendChild(el("text",{x:cx,y:cy+19,"text-anchor":"middle",style:"font-size:12px;fill:#64798C"},sub));
 
-  let y=44;
+  const dl=document.createElement("dl"); dl.className="ring-key";
   slices.forEach(s=>{
-    svg.appendChild(el("rect",{x:318,y:y-10,width:11,height:11,rx:3,fill:s.colour}));
-    svg.appendChild(el("text",{x:338,y:y,style:"font-size:13px;fill:#16304A"},s.name));
-    svg.appendChild(el("text",{x:W-54,y:y,"text-anchor":"end",
-      style:"font-size:13px;font-weight:600;fill:#16304A"},fmt(s.value)));
-    svg.appendChild(el("text",{x:W-6,y:y,"text-anchor":"end",style:"font-size:11.5px;fill:#64798C"},
-      total?fmt(s.value/total*100,1)+"%":"—"));
-    y+=29;
+    const d=document.createElement("div");
+    d.innerHTML=`<dt><i style="background:${s.colour}"></i>${s.name}</dt>`
+      +`<dd>${fmt(s.value)}<em>${total?fmt(s.value/total*100,1)+"%":"\u2014"}</em></dd>`;
+    dl.appendChild(d);
   });
+  host.appendChild(dl);
 }
 
 /* ==================================================================
